@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/pierbusdev/basicWeb/pkg/config"
 	"github.com/pierbusdev/basicWeb/pkg/handlers"
 	"github.com/pierbusdev/basicWeb/pkg/render"
@@ -12,9 +14,22 @@ import (
 
 const portNumber = ":4554"
 
+var appConfig config.AppConfig
+var session *scs.SessionManager
+
 func main() {
 	//creating app config
-	var appConfig config.AppConfig
+	//TODO change this to true when in production
+	appConfig.InProduction = false
+
+	session = scs.New()
+	session.Lifetime = 24 * time.Hour
+	session.Cookie.Persist = true //cookie must persist after user closes the browser
+	session.Cookie.SameSite = http.SameSiteLaxMode
+	session.Cookie.Secure = appConfig.InProduction //TODO change this in production
+
+	appConfig.Session = session
+
 	templateCache, err := render.CreateTemplateCache()
 	if err != nil {
 		log.Fatal("Could not create template cache:", err)
