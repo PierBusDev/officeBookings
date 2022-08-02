@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/pierbusdev/basicWeb/pkg/config"
+	"github.com/pierbusdev/basicWeb/pkg/models"
 	"github.com/pierbusdev/basicWeb/pkg/render"
 )
 
@@ -26,9 +27,13 @@ func NewHandlers(r *Repository) {
 }
 
 func (rep *Repository) Home(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, "home.page.html")
+	render.RenderTemplate(w, "home.page.html", &models.TemplateData{})
 }
 
 func (rep *Repository) About(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, "about.page.html")
+	stringMap := make(map[string]string)
+	stringMap["test"] = "Hello, again"
+	render.RenderTemplate(w, "about.page.html", &models.TemplateData{
+		StringMap: stringMap,
+	})
 }

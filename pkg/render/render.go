@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/pierbusdev/basicWeb/pkg/config"
+	"github.com/pierbusdev/basicWeb/pkg/models"
 )
 
 var appConfig *config.AppConfig
@@ -17,8 +18,13 @@ func NewTemplate(c *config.AppConfig) {
 	appConfig = c
 }
 
+func AddDefaultData(templData *models.TemplateData) *models.TemplateData {
+	//TODO add default data useful for all the pages in the future
+	return templData
+}
+
 // RenderTemplate renders given tmpl template using html/template
-func RenderTemplate(w http.ResponseWriter, tmpl string) {
+func RenderTemplate(w http.ResponseWriter, tmpl string, templData *models.TemplateData) {
 	var templateCache map[string]*template.Template
 	var err error
 	if appConfig.UseCache {
@@ -38,7 +44,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string) {
 	}
 
 	buf := new(bytes.Buffer)
-	err = templ.Execute(buf, nil)
+	err = templ.Execute(buf, AddDefaultData(templData))
 	if err != nil {
 		log.Println(err)
 	}
