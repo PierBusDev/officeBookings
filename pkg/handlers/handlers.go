@@ -3,9 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/pierbusdev/basicWeb/pkg/config"
-	"github.com/pierbusdev/basicWeb/pkg/models"
-	"github.com/pierbusdev/basicWeb/pkg/render"
+	"github.com/pierbusdev/conferenceRoomBookings/pkg/config"
+	"github.com/pierbusdev/conferenceRoomBookings/pkg/models"
+	"github.com/pierbusdev/conferenceRoomBookings/pkg/render"
 )
 
 type Repository struct {

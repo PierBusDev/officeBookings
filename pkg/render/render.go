@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/pierbusdev/basicWeb/pkg/config"
-	"github.com/pierbusdev/basicWeb/pkg/models"
+	"github.com/pierbusdev/conferenceRoomBookings/pkg/config"
+	"github.com/pierbusdev/conferenceRoomBookings/pkg/models"
 )
 
 var appConfig *config.AppConfig

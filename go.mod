@@ -1,4 +1,4 @@
-module github.com/pierbusdev/basicWeb
+module github.com/pierbusdev/conferenceRoomBookings
 
 go 1.18
 
