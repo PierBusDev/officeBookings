@@ -19,15 +19,26 @@ func NewTemplate(c *config.AppConfig) {
 
 // RenderTemplate renders given tmpl template using html/template
 func RenderTemplate(w http.ResponseWriter, tmpl string) {
-	//obtaining template cache
-	templateCache := appConfig.TemplateCache
+	var templateCache map[string]*template.Template
+	var err error
+	if appConfig.UseCache {
+		//obtaining template cache from the appConfig
+		templateCache = appConfig.TemplateCache
+	} else {
+		//just rebuild a new instance right now and use that
+		templateCache, err = CreateTemplateCache()
+		if err != nil {
+			log.Fatal("Can't create a template cache: ", err)
+		}
+	}
+
 	templ, ok := templateCache[tmpl]
 	if !ok {
 		log.Fatal("Can't find template in the cache")
 	}
 
 	buf := new(bytes.Buffer)
-	err := templ.Execute(buf, nil)
+	err = templ.Execute(buf, nil)
 	if err != nil {
 		log.Println(err)
 	}
