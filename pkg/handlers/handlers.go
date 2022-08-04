@@ -44,3 +44,23 @@ func (rep *Repository) About(w http.ResponseWriter, r *http.Request) {
 		StringMap: stringMap,
 	})
 }
+
+func (rep *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, "make-reservation.page.html", &models.TemplateData{})
+}
+
+func (rep *Repository) BigOffice(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, "big-office.page.html", &models.TemplateData{})
+}
+
+func (rep *Repository) MediumOffice(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, "medium-office.page.html", &models.TemplateData{})
+}
+
+func (rep *Repository) SharedOffice(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, "shared-office.page.html", &models.TemplateData{})
+}
+
+func (rep *Repository) SearchAvailability(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, "search-availability.page.html", &models.TemplateData{})
+}

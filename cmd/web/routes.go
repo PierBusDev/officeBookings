@@ -18,6 +18,11 @@ func routes(appConfig *config.AppConfig) http.Handler {
 
 	mux.Get("/", handlers.Repo.Home)
 	mux.Get("/about", handlers.Repo.About)
+	mux.Get("/big-office", handlers.Repo.BigOffice)
+	mux.Get("/medium-office", handlers.Repo.MediumOffice)
+	mux.Get("/shared-office", handlers.Repo.SharedOffice)
+	mux.Get("/search-availability", handlers.Repo.SearchAvailability)
+	mux.Get("/make-reservation", handlers.Repo.Reservation)
 
 	//static files loading
 	fileServer := http.FileServer(http.Dir("./static/"))
