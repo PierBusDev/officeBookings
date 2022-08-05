@@ -64,3 +64,7 @@ func (rep *Repository) SharedOffice(w http.ResponseWriter, r *http.Request) {
 func (rep *Repository) SearchAvailability(w http.ResponseWriter, r *http.Request) {
 	render.RenderTemplate(w, "search-availability.page.html", &models.TemplateData{})
 }
+
+func (rep *Repository) Contact(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, "contact.page.html", &models.TemplateData{})
+}
