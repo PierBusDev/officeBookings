@@ -21,7 +21,11 @@ func routes(appConfig *config.AppConfig) http.Handler {
 	mux.Get("/big-office", handlers.Repo.BigOffice)
 	mux.Get("/medium-office", handlers.Repo.MediumOffice)
 	mux.Get("/shared-office", handlers.Repo.SharedOffice)
+
 	mux.Get("/search-availability", handlers.Repo.SearchAvailability)
+	mux.Post("/search-availability", handlers.Repo.PostAvailability)
+	mux.Post("/search-availability-json", handlers.Repo.AvailabilityJson)
+
 	mux.Get("/make-reservation", handlers.Repo.Reservation)
 	mux.Get("/contact", handlers.Repo.Contact)
 

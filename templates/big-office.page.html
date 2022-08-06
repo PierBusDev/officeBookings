@@ -71,6 +71,37 @@
         myPrompt.custom({
             title: 'Choose your dates',
             msg: html,
+            willOpen: () => {
+                        console.log("c", c)
+                        const elem = document.getElementById("reservation-dates-modal");
+                        const rp = new DateRangePicker(elem, {
+                            format: 'yyyy-mm-dd',
+                            showOnFocus: true,
+                        })
+                    },
+            didOpen: () => {
+                document.getElementById("start").removeAttribute("disabled");
+                document.getElementById("end").removeAttribute("disabled");
+            },
+            preConfirm: () => {
+                        return [
+                            document.getElementById('start').value,
+                            document.getElementById('end').value
+                        ]
+            },
+            callback: function(formValues){
+                const form = document.getElementById("check-availability-form");
+                const formData = new FormData(form);
+                formData.append("csrf_token", "{{.CSRFToken}}");
+
+                fetch('/search-availability-json', {
+                    method: "post",
+                    body: formData,
+                }).then(response => response.json())
+                    .then(data => {
+                        console.log(data)
+                    });
+            }
         });
     })
 </script>

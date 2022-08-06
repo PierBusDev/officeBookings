@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/justinas/nosurf"
 	"github.com/pierbusdev/conferenceRoomBookings/pkg/config"
 	"github.com/pierbusdev/conferenceRoomBookings/pkg/models"
 )
@@ -18,13 +19,14 @@ func NewTemplate(c *config.AppConfig) {
 	appConfig = c
 }
 
-func AddDefaultData(templData *models.TemplateData) *models.TemplateData {
+func AddDefaultData(templData *models.TemplateData, r *http.Request) *models.TemplateData {
+	templData.CSRFToken = nosurf.Token(r)
 	//TODO add default data useful for all the pages in the future
 	return templData
 }
 
 // RenderTemplate renders given tmpl template using html/template
-func RenderTemplate(w http.ResponseWriter, tmpl string, templData *models.TemplateData) {
+func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, templData *models.TemplateData) {
 	var templateCache map[string]*template.Template
 	var err error
 	if appConfig.UseCache {
@@ -44,7 +46,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string, templData *models.Templa
 	}
 
 	buf := new(bytes.Buffer)
-	err = templ.Execute(buf, AddDefaultData(templData))
+	err = templ.Execute(buf, AddDefaultData(templData, r))
 	if err != nil {
 		log.Println(err)
 	}
