@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/pierbusdev/conferenceRoomBookings/pkg/config"
-	"github.com/pierbusdev/conferenceRoomBookings/pkg/models"
-	"github.com/pierbusdev/conferenceRoomBookings/pkg/render"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/config"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/models"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/render"
 )
 
 type Repository struct {

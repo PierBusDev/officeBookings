@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/pierbusdev/conferenceRoomBookings/pkg/config"
-	"github.com/pierbusdev/conferenceRoomBookings/pkg/handlers"
-	"github.com/pierbusdev/conferenceRoomBookings/pkg/render"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/config"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/handlers"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/render"
 )
 
 const portNumber = ":4554"
