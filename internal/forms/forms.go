@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/asaskevich/govalidator"
 )
 
 //Form embeds url.Values object + errors
@@ -44,6 +46,7 @@ func (f *Form) Valid() bool {
 	return len(f.Errors) == 0
 }
 
+//MinLegth checks that the length of the content of field is at least length
 func (f *Form) MinLength(field string, length int, r *http.Request) bool {
 	fieldValue := r.Form.Get(field)
 	if len(fieldValue) < length {
@@ -52,4 +55,11 @@ func (f *Form) MinLength(field string, length int, r *http.Request) bool {
 	}
 
 	return true
+}
+
+//IsEmail checks for valid emails
+func (f *Form) IsEmail(field string) {
+	if !govalidator.IsEmail(f.Get(field)) {
+		f.Errors.Add(field, "Invalid email address")
+	}
 }
