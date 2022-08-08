@@ -20,8 +20,11 @@ func NewTemplate(c *config.AppConfig) {
 }
 
 func AddDefaultData(templData *models.TemplateData, r *http.Request) *models.TemplateData {
-	templData.CSRFToken = nosurf.Token(r)
 	//TODO add default data useful for all the pages in the future
+	templData.CSRFToken = nosurf.Token(r)
+	templData.Flash = appConfig.Session.PopString(r.Context(), "flash")
+	templData.Error = appConfig.Session.PopString(r.Context(), "error")
+	templData.Warning = appConfig.Session.PopString(r.Context(), "warning")
 	return templData
 }
 

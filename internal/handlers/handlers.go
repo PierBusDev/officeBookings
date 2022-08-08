@@ -88,6 +88,9 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	rep.AppConfig.Session.Put(r.Context(), "reservation", reservation)
+	http.Redirect(w, r, "/reservation-summary", http.StatusSeeOther)
 }
 
 func (rep *Repository) BigOffice(w http.ResponseWriter, r *http.Request) {
@@ -134,4 +137,23 @@ func (rep *Repository) AvailabilityJson(w http.ResponseWriter, r *http.Request) 
 
 func (rep *Repository) Contact(w http.ResponseWriter, r *http.Request) {
 	render.RenderTemplate(w, r, "contact.page.html", &models.TemplateData{})
+}
+
+func (rep *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) {
+	reservation, ok := rep.AppConfig.Session.Get(r.Context(), "reservation").(models.Reservation)
+	if !ok {
+		log.Println("Cannot get item from session")
+		rep.AppConfig.Session.Put(r.Context(), "error", "Cannot get reservation from session")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	//cleaning up the session, we already have the reservation data in the reservation variable (see above)
+	rep.AppConfig.Session.Remove(r.Context(), "reservation")
+
+	data := make(map[string]any)
+	data["reservation"] = reservation
+	render.RenderTemplate(w, r, "reservation-summary.page.html", &models.TemplateData{
+		Data: data,
+	})
 }

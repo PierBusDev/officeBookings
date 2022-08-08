@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/config"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/handlers"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/models"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/render"
 )
 
@@ -18,6 +20,8 @@ var appConfig config.AppConfig
 var session *scs.SessionManager
 
 func main() {
+	//this below is needed to be capable of storing complex types in the session
+	gob.Register(models.Reservation{})
 	//creating app config
 	//TODO change this to true when in production
 	appConfig.InProduction = false
