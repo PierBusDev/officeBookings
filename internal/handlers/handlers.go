@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/pierbusdev/conferenceRoomBookings/internal/config"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/forms"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/models"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/render"
 )
@@ -49,7 +50,43 @@ func (rep *Repository) About(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rep *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "make-reservation.page.html", &models.TemplateData{})
+	var emptyReservation models.Reservation
+	data := make(map[string]any)
+	data["reservation"] = emptyReservation
+	render.RenderTemplate(w, r, "make-reservation.page.html", &models.TemplateData{
+		Form: forms.New(nil),
+		Data: data,
+	})
+}
+
+func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Println("error in parsing data:", err)
+		return
+	}
+
+	reservation := models.Reservation{
+		FirstName: r.Form.Get("first_name"),
+		LastName:  r.Form.Get("last_name"),
+		Phone:     r.Form.Get("phone"),
+		Email:     r.Form.Get("email"),
+	}
+
+	form := forms.New(r.PostForm)
+
+	form.Required("first_name", "last_name", "email", "phone")
+	form.MinLength("first_name", 3, r)
+
+	if !form.Valid() {
+		data := make(map[string]any)
+		data["reservation"] = reservation
+		render.RenderTemplate(w, r, "make-reservation.page.html", &models.TemplateData{
+			Form: form,
+			Data: data,
+		})
+		return
+	}
 }
 
 func (rep *Repository) BigOffice(w http.ResponseWriter, r *http.Request) {
