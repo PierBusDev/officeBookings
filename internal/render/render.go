@@ -13,6 +13,7 @@ import (
 )
 
 var appConfig *config.AppConfig
+var pathToTemplates = "./templates"
 
 // NewTemplate  set the app configuration
 func NewTemplate(c *config.AppConfig) {
@@ -67,7 +68,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	templateCache := make(map[string]*template.Template)
 
 	//find all the files with .page pseudoextension
-	pages, err := filepath.Glob("./templates/*page.html")
+	pages, err := filepath.Glob(pathToTemplates + "/*page.html")
 	if err != nil {
 		return templateCache, err
 	}
@@ -81,13 +82,13 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 		}
 
 		//checking for layouts presence
-		matches, err := filepath.Glob("./templates/*.layout.html")
+		matches, err := filepath.Glob(pathToTemplates + "/*.layout.html")
 		if err != nil {
 			return templateCache, err
 		}
 
 		if len(matches) > 0 { //if we have layouts we have to incorporate them in the template
-			templ, err = templ.ParseGlob("./templates/*.layout.html")
+			templ, err = templ.ParseGlob(pathToTemplates + "/*.layout.html")
 			if err != nil {
 				return templateCache, err
 			}

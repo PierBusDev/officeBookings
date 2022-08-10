@@ -52,7 +52,7 @@ func getRoutes() http.Handler {
 	mux := chi.NewRouter()
 
 	mux.Use(middleware.Recoverer)
-	mux.Use(NoSurf)
+	//mux.Use(NoSurf) //no need to test here too, already tested in middlewares
 	mux.Use(SessionLoad)
 
 	mux.Get("/", Repo.Home)
