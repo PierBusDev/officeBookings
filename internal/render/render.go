@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"errors"
 	"html/template"
 	"log"
 	"net/http"
@@ -30,7 +31,7 @@ func AddDefaultData(templData *models.TemplateData, r *http.Request) *models.Tem
 }
 
 // RenderTemplate renders given tmpl template using html/template
-func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, templData *models.TemplateData) {
+func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, templData *models.TemplateData) error {
 	var templateCache map[string]*template.Template
 	var err error
 	if appConfig.UseCache {
@@ -41,25 +42,30 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, templDa
 		templateCache, err = CreateTemplateCache()
 		if err != nil {
 			log.Fatal("Can't create a template cache: ", err)
+			return err
 		}
 	}
 
 	templ, ok := templateCache[tmpl]
 	if !ok {
-		log.Fatal("Can't find template in the cache")
+		return errors.New("Can't find template in the cache")
 	}
 
 	buf := new(bytes.Buffer)
 	err = templ.Execute(buf, AddDefaultData(templData, r))
 	if err != nil {
 		log.Println(err)
+		return err
 	}
 
 	//render the template
 	_, err = buf.WriteTo(w)
 	if err != nil {
 		log.Println("Some error occurred while writing the template to the browser:", err)
+		return err
 	}
+
+	return nil
 }
 
 //CreateTemplateCache will return a map containing all the templates which are present inside the `templates` folder
