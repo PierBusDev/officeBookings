@@ -2,7 +2,6 @@ package forms
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 
@@ -23,8 +22,8 @@ func New(data url.Values) *Form {
 }
 
 // Has checks if the form submitted by the user has a field named field and it is not empty
-func (f *Form) Has(field string, r *http.Request) bool {
-	value := r.Form.Get(field)
+func (f *Form) Has(field string) bool {
+	value := f.Get(field)
 	if value == "" {
 		return false
 	}
@@ -47,8 +46,8 @@ func (f *Form) Valid() bool {
 }
 
 //MinLegth checks that the length of the content of field is at least length
-func (f *Form) MinLength(field string, length int, r *http.Request) bool {
-	fieldValue := r.Form.Get(field)
+func (f *Form) MinLength(field string, length int) bool {
+	fieldValue := f.Get(field)
 	if len(fieldValue) < length {
 		f.Errors.Add(field, fmt.Sprintf("This field must be at least %d characters long", length))
 		return false
