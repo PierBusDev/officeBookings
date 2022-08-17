@@ -3,11 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/pierbusdev/conferenceRoomBookings/internal/config"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/forms"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/helpers"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/models"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/render"
 )
@@ -31,22 +31,11 @@ func NewHandlers(r *Repository) {
 }
 
 func (rep *Repository) Home(w http.ResponseWriter, r *http.Request) {
-	remoteIp := r.RemoteAddr
-	rep.AppConfig.Session.Put(r.Context(), "remote_ip", remoteIp)
-
 	render.RenderTemplate(w, r, "home.page.html", &models.TemplateData{})
 }
 
 func (rep *Repository) About(w http.ResponseWriter, r *http.Request) {
-	stringMap := make(map[string]string)
-	stringMap["test"] = "Hello, again"
-
-	remoteIp := rep.AppConfig.Session.GetString(r.Context(), "remote_ip")
-	stringMap["remote_ip"] = remoteIp
-
-	render.RenderTemplate(w, r, "about.page.html", &models.TemplateData{
-		StringMap: stringMap,
-	})
+	render.RenderTemplate(w, r, "about.page.html", &models.TemplateData{})
 }
 
 func (rep *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +51,7 @@ func (rep *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Println("error in parsing data:", err)
+		helpers.ServerError(w, err)
 		return
 	}
 
@@ -128,7 +117,8 @@ func (rep *Repository) AvailabilityJson(w http.ResponseWriter, r *http.Request) 
 
 	out, err := json.MarshalIndent(resp, "", "  ")
 	if err != nil {
-		log.Println(err)
+		helpers.ServerError(w, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -142,7 +132,7 @@ func (rep *Repository) Contact(w http.ResponseWriter, r *http.Request) {
 func (rep *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) {
 	reservation, ok := rep.AppConfig.Session.Get(r.Context(), "reservation").(models.Reservation)
 	if !ok {
-		log.Println("Cannot get item from session")
+		rep.AppConfig.ErrorLog.Println("Cannot get item from session")
 		rep.AppConfig.Session.Put(r.Context(), "error", "Cannot get reservation from session")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
