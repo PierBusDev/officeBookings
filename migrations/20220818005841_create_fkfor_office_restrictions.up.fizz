@@ -1,0 +1,8 @@
+add_foreign_key("office_restrictions", "office_id", {"offices": ["id"]}, {
+    "on_delete": "cascade",
+    "on_update": "cascade",
+})
+add_foreign_key("office_restrictions", "restriction_id", {"restrictions": ["id"]}, {
+    "on_delete": "cascade",
+    "on_update": "cascade",
+})

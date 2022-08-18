@@ -9,3 +9,5 @@ Built using:
 - [chi router](github.com/go-chi/chi) for routing
 - [scs](github.com/alexedwards/scs) for session management
 - [nosurf](github.com/justinas/nosurf) for CSRF protection
+- POSTGREsql as database
+- [soda](https://gobuffalo.io/documentation/database/soda/) for migrations
