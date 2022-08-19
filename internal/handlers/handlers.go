@@ -6,22 +6,27 @@ import (
 	"net/http"
 
 	"github.com/pierbusdev/conferenceRoomBookings/internal/config"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/driver"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/forms"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/helpers"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/models"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/render"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/repository"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/repository/dbrepo"
 )
 
 type Repository struct {
 	AppConfig *config.AppConfig
+	DB        repository.DatabaseRepo
 }
 
 var Repo *Repository
 
 // NewRepo creates a new Repository
-func NewRepo(c *config.AppConfig) *Repository {
+func NewRepo(c *config.AppConfig, db *driver.DB) *Repository {
 	return &Repository{
 		AppConfig: c,
+		DB:        dbrepo.NewPostgresDBRepo(db.SQL, c),
 	}
 }
 

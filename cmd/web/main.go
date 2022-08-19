@@ -10,6 +10,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/config"
+	"github.com/pierbusdev/conferenceRoomBookings/internal/driver"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/handlers"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/helpers"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/models"
@@ -24,10 +25,11 @@ var infoLog *log.Logger
 var errorLog *log.Logger
 
 func main() {
-	err := run()
+	db, err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.SQL.Close()
 
 	fmt.Printf("Starting application on port %s\n", portNumber)
 	srv := &http.Server{
@@ -40,7 +42,7 @@ func main() {
 	}
 }
 
-func run() error {
+func run() (*driver.DB, error) {
 	//this below is needed to be capable of storing complex types in the session
 	gob.Register(models.Reservation{})
 	//creating app config
@@ -62,10 +64,18 @@ func run() error {
 
 	appConfig.Session = session
 
+	//initialize connection to database
+	log.Println("Connecting to database...")
+	db, err := driver.ConnectSQL("host=localhost port=5432 user=pier password=pier dbname=test-connect sslmode=disable")
+	if err != nil {
+		log.Fatal("Error connecting to database: ", err)
+	}
+	log.Println("Successfully connected to database")
+
 	templateCache, err := render.CreateTemplateCache()
 	if err != nil {
 		log.Fatal("Could not create template cache:", err)
-		return err
+		return nil, err
 	}
 	//initialize values of appConfig
 	appConfig.TemplateCache = templateCache
@@ -74,11 +84,11 @@ func run() error {
 	render.NewTemplate(&appConfig)
 
 	//creating and passing a new Repository to the handlers package
-	repo := handlers.NewRepo(&appConfig)
+	repo := handlers.NewRepo(&appConfig, db)
 	handlers.NewHandlers(repo)
 
 	//helpers
 	helpers.NewHelpers(&appConfig)
 
-	return nil
+	return db, nil
 }
