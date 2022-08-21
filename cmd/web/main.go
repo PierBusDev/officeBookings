@@ -44,7 +44,11 @@ func main() {
 
 func run() (*driver.DB, error) {
 	//this below is needed to be capable of storing complex types in the session
+	gob.Register(models.User{})
+	gob.Register(models.Office{})
 	gob.Register(models.Reservation{})
+	gob.Register(models.Restriction{})
+	gob.Register(models.OfficeRestriction{})
 	//creating app config
 	//TODO change this to true when in production
 	appConfig.InProduction = false
@@ -81,7 +85,7 @@ func run() (*driver.DB, error) {
 	appConfig.TemplateCache = templateCache
 	appConfig.UseCache = false
 	//passing config to the template package
-	render.NewTemplate(&appConfig)
+	render.NewRenderer(&appConfig)
 
 	//creating and passing a new Repository to the handlers package
 	repo := handlers.NewRepo(&appConfig, db)
