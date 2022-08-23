@@ -42,3 +42,64 @@ func (rep *postgresDBRepo) InsertOfficeRestriction(restr models.OfficeRestrictio
 	}
 	return nil
 }
+
+//SearchAvailabilityByDatesByOfficeId returns true if the availability exists for officeId and false if not
+func (rep *postgresDBRepo) SearchAvailabilityByDatesByOfficeId(start, end time.Time, officeId int) (bool, error) {
+	//checking to avoid hanging transactions
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var nRows int
+	query := `
+		select count(*) 
+		from office_restrictions 
+		where office_id = $1 and
+		$2 < end_date and $3 > start_date;`
+	row := rep.DB.QueryRowContext(ctx, query, officeId, start, end)
+
+	if err := row.Scan(&nRows); err != nil {
+		return false, err
+	}
+
+	if nRows == 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+//SearchAvailabilityForAllOffices returns a slice of available offices if there are any in the date specified
+func (rep *postgresDBRepo) SearchAvailabilityForAllOffices(start, end time.Time) ([]models.Office, error) {
+	//checking to avoid hanging transactions
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	query := `
+		select id, name
+		from offices 
+		where id not in (
+			select office_id 
+			from office_restrictions 
+			where $1 < end_date and $2 > start_date
+		);`
+
+	var offices []models.Office
+	rows, err := rep.DB.QueryContext(ctx, query, start, end)
+	if err != nil {
+		return offices, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var office models.Office
+		if err := rows.Scan(&office.ID, &office.OfficeName); err != nil {
+			return offices, err
+		}
+		offices = append(offices, office)
+	}
+
+	if err := rows.Err(); err != nil {
+		return offices, err
+	}
+
+	return offices, nil
+}
