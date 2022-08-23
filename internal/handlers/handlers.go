@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/pierbusdev/conferenceRoomBookings/internal/config"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/driver"
@@ -60,11 +62,40 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//casting dates from string to time.Time:
+	startDateString := r.Form.Get("start_date")
+	endDateString := r.Form.Get("end_date")
+	layoutDateInputFormat := "02-01-2006"
+	startDate, err := time.Parse(layoutDateInputFormat, startDateString)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+	endDate, err := time.Parse(layoutDateInputFormat, endDateString)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+	//formatting to db
+	layoutDateOutputFormat := "2006-01-02"
+	startDateFormatted, _ := time.Parse(layoutDateOutputFormat, startDate.Format("2006-01-02"))
+	endDateFormatted, _ := time.Parse(layoutDateOutputFormat, endDate.Format("2006-01-02"))
+
+	//converting  office_id from string to int:
+	officeId, err := strconv.Atoi(r.Form.Get("office_id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
 	reservation := models.Reservation{
 		FirstName: r.Form.Get("first_name"),
 		LastName:  r.Form.Get("last_name"),
 		Phone:     r.Form.Get("phone"),
 		Email:     r.Form.Get("email"),
+		StartDate: startDateFormatted,
+		EndDate:   endDateFormatted,
+		OfficeID:  officeId,
 	}
 
 	form := forms.New(r.PostForm)
@@ -80,6 +111,27 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 			Form: form,
 			Data: data,
 		})
+		return
+	}
+
+	//writing to db the reservation
+	newReservationId, err := rep.DB.InsertReservation(reservation)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	resctriction := models.OfficeRestriction{
+		StartDate:     startDateFormatted,
+		EndDate:       endDateFormatted,
+		OfficeID:      officeId,
+		ReservationID: newReservationId,
+		RestrictionID: 1,
+	}
+
+	err = rep.DB.InsertOfficeRestriction(resctriction)
+	if err != nil {
+		helpers.ServerError(w, err)
 		return
 	}
 

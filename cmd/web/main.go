@@ -70,7 +70,7 @@ func run() (*driver.DB, error) {
 
 	//initialize connection to database
 	log.Println("Connecting to database...")
-	db, err := driver.ConnectSQL("host=localhost port=5432 user=pier password=pier dbname=test-connect sslmode=disable")
+	db, err := driver.ConnectSQL("host=localhost port=5432 user=pier password=pier dbname=offices sslmode=disable")
 	if err != nil {
 		log.Fatal("Error connecting to database: ", err)
 	}
