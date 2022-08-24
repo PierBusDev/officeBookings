@@ -74,7 +74,7 @@ func (rep *postgresDBRepo) SearchAvailabilityForAllOffices(start, end time.Time)
 	defer cancel()
 
 	query := `
-		select id, name
+		select id, office_name
 		from offices 
 		where id not in (
 			select office_id 

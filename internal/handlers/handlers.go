@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/config"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/driver"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/forms"
@@ -76,7 +76,7 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		helpers.ServerError(w, err)
 		return
 	}
-	//formatting to db
+	//formatting for db
 	layoutDateOutputFormat := "2006-01-02"
 	startDateFormatted, _ := time.Parse(layoutDateOutputFormat, startDate.Format("2006-01-02"))
 	endDateFormatted, _ := time.Parse(layoutDateOutputFormat, endDate.Format("2006-01-02"))
@@ -156,9 +156,58 @@ func (rep *Repository) SearchAvailability(w http.ResponseWriter, r *http.Request
 }
 
 func (rep *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
-	start, end := r.Form.Get("start"), r.Form.Get("end")
+	//casting dates from string to time.Time:
+	startDateString := r.Form.Get("start")
+	endDateString := r.Form.Get("end")
+	layoutDateInputFormat := "02-01-2006"
+	startDate, err := time.Parse(layoutDateInputFormat, startDateString)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+	endDate, err := time.Parse(layoutDateInputFormat, endDateString)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+	//formatting for db
+	layoutDateOutputFormat := "2006-01-02"
+	startDateFormatted, _ := time.Parse(layoutDateOutputFormat, startDate.Format("2006-01-02"))
+	endDateFormatted, _ := time.Parse(layoutDateOutputFormat, endDate.Format("2006-01-02"))
 
-	w.Write([]byte(fmt.Sprintf("Start date is %s and end date is %s", start, end)))
+	offices, err := rep.DB.SearchAvailabilityForAllOffices(startDateFormatted, endDateFormatted)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	if len(offices) == 0 { //no available offices
+		rep.AppConfig.Session.Put(r.Context(), "error", "There is no availability")
+		rep.AppConfig.InfoLog.Println("no available offices")
+
+		http.Redirect(w, r, "/search-availability", http.StatusSeeOther)
+		return
+	}
+	//else I have offices
+	rep.AppConfig.InfoLog.Println("available offices:")
+	for _, i := range offices {
+		rep.AppConfig.InfoLog.Println(i.OfficeName)
+	}
+
+	//pass data to a page
+	data := make(map[string]any)
+	data["offices"] = offices
+	//store some of the data in the session object to allow a better page rerendering
+	res := models.Reservation{
+		StartDate: startDate,
+		EndDate:   endDate,
+	}
+	rep.AppConfig.Session.Put(r.Context(), "reservation", res)
+
+	render.Template(w, r, "choose-office.page.html", &models.TemplateData{
+		Data: data,
+	})
+
 }
 
 type jsonResponse struct {
@@ -203,4 +252,27 @@ func (rep *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request
 	render.Template(w, r, "reservation-summary.page.html", &models.TemplateData{
 		Data: data,
 	})
+}
+
+//ChooseOffice is an handler called from the choose-office.page.html template and has to get the passed id in the url parameter
+//and update the session reservation object so that it can be used in the make-reservation.page.html template
+func (rep *Repository) ChooseOffice(w http.ResponseWriter, r *http.Request) {
+	officeID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	reservation, ok := rep.AppConfig.Session.Get(r.Context(), "reservation").(models.Reservation)
+	if !ok {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	reservation.OfficeID = officeID
+
+	// put all back in session
+	rep.AppConfig.Session.Put(r.Context(), "reservation", reservation)
+	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
+
 }

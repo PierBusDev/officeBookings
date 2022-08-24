@@ -1,0 +1,22 @@
+{{template "base" .}}
+
+{{define "content"}}
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1>Choose an available office:</h1>
+
+                {{$offices := index .Data "offices"}}
+                {{range $office := $offices}}
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title">{{$office.OfficeName}}</h5>
+                            <p class="card-text"></p>
+                            <a href="/choose-office/{{$office.ID}}" class="btn btn-primary">Choose</a>
+                        </div>
+                    </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+{{end}}
