@@ -12,4 +12,5 @@ type DatabaseRepo interface {
 	InsertOfficeRestriction(restr models.OfficeRestriction) error
 	SearchAvailabilityByDatesByOfficeId(start, end time.Time, roomId int) (bool, error)
 	SearchAvailabilityForAllOffices(start, end time.Time) ([]models.Office, error)
+	GetOfficeById(id int) (models.Office, error)
 }

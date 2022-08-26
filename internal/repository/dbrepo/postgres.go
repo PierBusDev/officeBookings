@@ -103,3 +103,17 @@ func (rep *postgresDBRepo) SearchAvailabilityForAllOffices(start, end time.Time)
 
 	return offices, nil
 }
+
+func (rep *postgresDBRepo) GetOfficeById(id int) (models.Office, error) {
+	//checking to avoid hanging transactions
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	query := `select id, office_name, created_at, updated_at from offices where id = $1`
+	var office models.Office
+	row := rep.DB.QueryRowContext(ctx, query, id)
+	if err := row.Scan(&office.ID, &office.OfficeName, &office.CreatedAt, &office.UpdatedAt); err != nil {
+		return office, err
+	}
+	return office, nil
+}
