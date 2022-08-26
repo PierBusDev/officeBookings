@@ -60,6 +60,8 @@ func (rep *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	reservation.Office.OfficeName = office.OfficeName
+	//saving it in session too ( gonna need it for the summary)
+	rep.AppConfig.Session.Put(r.Context(), "reservation", reservation)
 
 	//converting dates to format used in the frontend
 	startDate := reservation.StartDate.Format("02-01-2006")
@@ -79,12 +81,20 @@ func (rep *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
+	reservation, ok := rep.AppConfig.Session.Get(r.Context(), "reservation").(models.Reservation)
+	if !ok {
+		helpers.ServerError(w, errors.New("Could not get reservation from session"))
+		return
+	}
+
 	err := r.ParseForm()
 	if err != nil {
 		helpers.ServerError(w, err)
 		return
 	}
 
+	//======= TODO ==========================================================
+	//All the part below can be simplifed: now that I get the reservation data via the session I don't need to work with the form
 	//casting dates from string to time.Time:
 	startDateString := r.Form.Get("start_date")
 	endDateString := r.Form.Get("end_date")
@@ -110,16 +120,12 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		helpers.ServerError(w, err)
 		return
 	}
+	//========================================================================
 
-	reservation := models.Reservation{
-		FirstName: r.Form.Get("first_name"),
-		LastName:  r.Form.Get("last_name"),
-		Phone:     r.Form.Get("phone"),
-		Email:     r.Form.Get("email"),
-		StartDate: startDateFormatted,
-		EndDate:   endDateFormatted,
-		OfficeID:  officeId,
-	}
+	reservation.FirstName = r.Form.Get("first_name")
+	reservation.LastName = r.Form.Get("last_name")
+	reservation.Phone = r.Form.Get("phone")
+	reservation.Email = r.Form.Get("email")
 
 	form := forms.New(r.PostForm)
 
@@ -143,6 +149,8 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		helpers.ServerError(w, err)
 		return
 	}
+	//putting back reservation in the session
+	rep.AppConfig.Session.Put(r.Context(), "reservation", reservation)
 
 	resctriction := models.OfficeRestriction{
 		StartDate:     startDateFormatted,
@@ -272,8 +280,16 @@ func (rep *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request
 
 	data := make(map[string]any)
 	data["reservation"] = reservation
+
+	startDate := reservation.StartDate.Format("02-01-2006")
+	endDate := reservation.EndDate.Format("02-01-2006")
+	stringMap := make(map[string]string)
+	stringMap["start_date"] = startDate
+	stringMap["end_date"] = endDate
+
 	render.Template(w, r, "reservation-summary.page.html", &models.TemplateData{
-		Data: data,
+		Data:      data,
+		StringMap: stringMap,
 	})
 }
 
