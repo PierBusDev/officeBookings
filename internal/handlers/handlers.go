@@ -96,23 +96,36 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	//======= TODO ==========================================================
 	//All the part below can be simplifed: now that I get the reservation data via the session I don't need to work with the form
 	//casting dates from string to time.Time:
-	startDateString := r.Form.Get("start_date")
-	endDateString := r.Form.Get("end_date")
-	layoutDateInputFormat := "02-01-2006"
-	startDate, err := time.Parse(layoutDateInputFormat, startDateString)
+
+	startDateFormatted, err := convertStringDateIntoTime(r.Form.Get("start_date"))
 	if err != nil {
 		helpers.ServerError(w, err)
 		return
 	}
-	endDate, err := time.Parse(layoutDateInputFormat, endDateString)
+	endDateFormatted, err := convertStringDateIntoTime(r.Form.Get("end_date"))
 	if err != nil {
 		helpers.ServerError(w, err)
 		return
 	}
-	//formatting for db
-	layoutDateOutputFormat := "2006-01-02"
-	startDateFormatted, _ := time.Parse(layoutDateOutputFormat, startDate.Format("2006-01-02"))
-	endDateFormatted, _ := time.Parse(layoutDateOutputFormat, endDate.Format("2006-01-02"))
+
+	// ============= OLD to remove after checking convertStringDateIntoTime works
+	// startDateString := r.Form.Get("start_date")
+	// endDateString := r.Form.Get("end_date")
+	// layoutDateInputFormat := "02-01-2006"
+	// startDate, err := time.Parse(layoutDateInputFormat, startDateString)
+	// if err != nil {
+	// 	helpers.ServerError(w, err)
+	// 	return
+	// }
+	// endDate, err := time.Parse(layoutDateInputFormat, endDateString)
+	// if err != nil {
+	// 	helpers.ServerError(w, err)
+	// 	return
+	// }
+	// //formatting for db
+	// layoutDateOutputFormat := "2006-01-02"
+	// startDateFormatted, _ := time.Parse(layoutDateOutputFormat, startDate.Format("2006-01-02"))
+	// endDateFormatted, _ := time.Parse(layoutDateOutputFormat, endDate.Format("2006-01-02"))
 
 	//converting  office_id from string to int:
 	officeId, err := strconv.Atoi(r.Form.Get("office_id"))
@@ -242,14 +255,40 @@ func (rep *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) 
 }
 
 type jsonResponse struct {
-	Ok      bool   `json:"ok"`
-	Message string `json:"message"`
+	Ok        bool   `json:"ok"`
+	Message   string `json:"message"`
+	OfficeID  string `json:"office_id"`
+	StartDate string `json:"start_date"`
+	EndDate   string `json:"end_date"`
 }
 
 func (rep *Repository) AvailabilityJson(w http.ResponseWriter, r *http.Request) {
+	startDate := r.Form.Get("start")
+	endDate := r.Form.Get("end")
+	officeID, _ := strconv.Atoi(r.Form.Get("office_id"))
+
+	startDateFormatted, err := convertStringDateIntoTime(startDate)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+	endDateFormatted, err := convertStringDateIntoTime(endDate)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	available, err := rep.DB.SearchAvailabilityByDatesByOfficeId(startDateFormatted, endDateFormatted, officeID)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
 	resp := jsonResponse{
-		Ok:      true,
-		Message: "available!",
+		Ok:        available,
+		Message:   "",
+		StartDate: startDate,
+		EndDate:   endDate,
+		OfficeID:  strconv.Itoa(officeID),
 	}
 
 	out, err := json.MarshalIndent(resp, "", "  ")
@@ -313,5 +352,24 @@ func (rep *Repository) ChooseOffice(w http.ResponseWriter, r *http.Request) {
 	// put all back in session
 	rep.AppConfig.Session.Put(r.Context(), "reservation", reservation)
 	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
+
+}
+
+//helper method to convert a date in a string on the fronted to a time.Time object
+func convertStringDateIntoTime(date string) (time.Time, error) {
+	layoutDateInputFormat := "02-01-2006" //format of date in the frontend
+	dateConverted, err := time.Parse(layoutDateInputFormat, date)
+	if err != nil {
+		return dateConverted, err
+	}
+
+	//formatting for db
+	layoutDateOutputFormat := "2006-01-02" //format of date in db
+	dateFormatted, err := time.Parse(layoutDateOutputFormat, dateConverted.Format("2006-01-02"))
+	if err != nil {
+		return dateFormatted, err
+	}
+
+	return dateFormatted, nil
 
 }

@@ -207,8 +207,10 @@
 
             async function custom(c) {
                 const { value: formValues } = await Swal.fire({
+                    icon: c.icon ?? "",
                     title: c.title ?? "",
                     html: c.msg ?? "",
+                    showConfirmButton: c.showConfirmButton ?? true,
                     backdrop: true,
                     focusConfirm: false,
                     showCancelButton: true,

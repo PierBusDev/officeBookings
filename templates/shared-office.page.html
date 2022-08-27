@@ -49,7 +49,7 @@
     <script>
         document.getElementById("check-availability-button").addEventListener("click", function () {
             let html = `
-        <form id="check-availability-form" action="" method="post" novalidate class="needs-validation">
+        <form id="check-availability-form" action="" method="post" novalidate class="needs-validation" autocomplete="off">
             <div class="form-row">
                 <div class="col">
                     <div class="form-row" id="reservation-dates-modal">
@@ -68,6 +68,50 @@
             myPrompt.custom({
                 title: 'Choose your dates',
                 msg: html,
+                willOpen: () => {
+                    const elem = document.getElementById("reservation-dates-modal");
+                    const rp = new DateRangePicker(elem, {
+                        format: 'dd-mm-yyyy',
+                        showOnFocus: true,
+                        minDate: new Date(),
+                    })
+                },
+                didOpen: () => {
+                    document.getElementById("start").removeAttribute("disabled");
+                    document.getElementById("end").removeAttribute("disabled");
+                },
+                preConfirm: () => {
+                            return [
+                                document.getElementById('start').value,
+                                document.getElementById('end').value
+                            ]
+                },
+                callback: function(formValues){
+                    const form = document.getElementById("check-availability-form");
+                    const formData = new FormData(form);
+                    formData.append("csrf_token", "{{.CSRFToken}}");
+                    formData.append("office_id", 3);
+
+
+                    fetch('/search-availability-json', {
+                        method: "post",
+                        body: formData,
+                    }).then(response => response.json())
+                        .then(data => {
+                            const url = `/book-office?id=${data.office_id}&start_date=${data.start_date}&end_date=${data.end_date}`;
+                            if(data.ok){
+                                myPrompt.custom({
+                                    icon: "success",
+                                    showConfirmButton: false,
+                                    msg: `<p>Office Available <a href="${url}" class="btn btn-primary">Book Now</a></p>`,
+                                })
+                            }else{
+                                myPrompt.error({
+                                    msg: "This office is not available on these dates"
+                                })
+                            }
+                        });
+                }
             });
         })
     </script>
