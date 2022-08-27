@@ -355,7 +355,42 @@ func (rep *Repository) ChooseOffice(w http.ResponseWriter, r *http.Request) {
 
 }
 
-//helper method to convert a date in a string on the fronted to a time.Time object
+//BookOffice takes url parameters, builds a new reservation session object and passes it to make-reservation page
+func (rep *Repository) BookOffice(w http.ResponseWriter, r *http.Request) {
+	officeID, err := strconv.Atoi(r.URL.Query().Get("office_id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
+
+	var reservation models.Reservation
+	reservation.OfficeID = officeID
+	reservation.StartDate, err = convertStringDateIntoTime(startDate)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+	reservation.EndDate, err = convertStringDateIntoTime(endDate)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	office, err := rep.DB.GetOfficeById(officeID)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+	reservation.Office.OfficeName = office.OfficeName
+
+	rep.AppConfig.Session.Put(r.Context(), "reservation", reservation)
+	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
+}
+
+//convertStringDateIntoTime is a helper method to convert a date in a string on the fronted to a time.Time object
 func convertStringDateIntoTime(date string) (time.Time, error) {
 	layoutDateInputFormat := "02-01-2006" //format of date in the frontend
 	dateConverted, err := time.Parse(layoutDateInputFormat, date)

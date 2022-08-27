@@ -100,7 +100,7 @@
                     body: formData,
                 }).then(response => response.json())
                     .then(data => {
-                        const url = `/book-office?id=${data.office_id}&start_date=${data.start_date}&end_date=${data.end_date}`;
+                        const url = `/book-office?office_id=${data.office_id}&start_date=${data.start_date}&end_date=${data.end_date}`;
                         if(data.ok){
                             myPrompt.custom({
                                 icon: "success",
