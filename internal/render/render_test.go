@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewTemplates(t *testing.T) {
-	NewTemplate(&testAppConfig)
+	NewRenderer(&testAppConfig)
 }
 
 func TestRenderTemplate(t *testing.T) {
@@ -24,11 +24,11 @@ func TestRenderTemplate(t *testing.T) {
 		t.Error(err)
 	}
 	var w myWriter
-	err = RenderTemplate(&w, r, "home.page.html", &models.TemplateData{})
+	err = Template(&w, r, "home.page.html", &models.TemplateData{})
 	if err != nil {
 		t.Error("error writing template to browser")
 	}
-	err = RenderTemplate(&w, r, "not.existent.page.html", &models.TemplateData{})
+	err = Template(&w, r, "not.existent.page.html", &models.TemplateData{})
 	if err == nil {
 		t.Error("rendering template that does not exist")
 	}

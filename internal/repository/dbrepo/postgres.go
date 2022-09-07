@@ -8,6 +8,7 @@ import (
 )
 
 func (rep *postgresDBRepo) AllUsers() bool {
+	//TODO to update as soon as support for multiple users is ready
 	return true
 }
 
