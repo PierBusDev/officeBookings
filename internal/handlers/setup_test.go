@@ -2,13 +2,6 @@ package handlers
 
 import (
 	"encoding/gob"
-	"html/template"
-	"log"
-	"net/http"
-	"os"
-	"path/filepath"
-	"time"
-
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -16,12 +9,19 @@ import (
 	"github.com/pierbusdev/conferenceRoomBookings/internal/config"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/models"
 	"github.com/pierbusdev/conferenceRoomBookings/internal/render"
+	"html/template"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
 )
 
 var appConfig config.AppConfig
 var session *scs.SessionManager
 
-func getRoutes() http.Handler {
+func TestMain(m *testing.M) {
 	//this below is needed to be capable of storing complex types in the session
 	gob.Register(models.Reservation{})
 	//creating app config
@@ -55,6 +55,11 @@ func getRoutes() http.Handler {
 	//creating and passing a new Repository to the handlers package
 	repo := NewTestRepo(&appConfig)
 	NewHandlers(repo)
+
+	os.Exit(m.Run())
+}
+
+func getRoutes() http.Handler {
 
 	mux := chi.NewRouter()
 

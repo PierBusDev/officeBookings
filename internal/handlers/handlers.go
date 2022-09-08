@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -57,14 +56,16 @@ func (rep *Repository) About(w http.ResponseWriter, r *http.Request) {
 func (rep *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 	reservation, ok := rep.AppConfig.Session.Get(r.Context(), "reservation").(models.Reservation)
 	if !ok {
-		helpers.ServerError(w, errors.New("Could not get reservation from session"))
+		rep.AppConfig.Session.Put(r.Context(), "error", "Can't get reservation from session")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
 	//getting the office name to show it in the form in the page
 	office, err := rep.DB.GetOfficeById(reservation.OfficeID)
 	if err != nil {
-		helpers.ServerError(w, err)
+		rep.AppConfig.Session.Put(r.Context(), "error", "Can't find office related to the reservation")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 	reservation.Office.OfficeName = office.OfficeName
@@ -89,51 +90,25 @@ func (rep *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
-	reservation, ok := rep.AppConfig.Session.Get(r.Context(), "reservation").(models.Reservation)
-	if !ok {
-		helpers.ServerError(w, errors.New("Could not get reservation from session"))
-		return
-	}
-
 	err := r.ParseForm()
 	if err != nil {
-		helpers.ServerError(w, err)
+		rep.AppConfig.Session.Put(r.Context(), "error", "Can't get reservation from session")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
-
-	//======= TODO ==========================================================
-	//All the part below can be simplifed: now that I get the reservation data via the session I don't need to work with the form
-	//casting dates from string to time.Time:
 
 	startDateFormatted, err := convertStringDateIntoTime(r.Form.Get("start_date"))
 	if err != nil {
-		helpers.ServerError(w, err)
+		rep.AppConfig.Session.Put(r.Context(), "error", "Can't get reservation from session")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 	endDateFormatted, err := convertStringDateIntoTime(r.Form.Get("end_date"))
 	if err != nil {
-		helpers.ServerError(w, err)
+		rep.AppConfig.Session.Put(r.Context(), "error", "Can't get reservation from session")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
-
-	// ============= OLD to remove after checking convertStringDateIntoTime works
-	// startDateString := r.Form.Get("start_date")
-	// endDateString := r.Form.Get("end_date")
-	// layoutDateInputFormat := "02-01-2006"
-	// startDate, err := time.Parse(layoutDateInputFormat, startDateString)
-	// if err != nil {
-	// 	helpers.ServerError(w, err)
-	// 	return
-	// }
-	// endDate, err := time.Parse(layoutDateInputFormat, endDateString)
-	// if err != nil {
-	// 	helpers.ServerError(w, err)
-	// 	return
-	// }
-	// //formatting for db
-	// layoutDateOutputFormat := "2006-01-02"
-	// startDateFormatted, _ := time.Parse(layoutDateOutputFormat, startDate.Format("2006-01-02"))
-	// endDateFormatted, _ := time.Parse(layoutDateOutputFormat, endDate.Format("2006-01-02"))
 
 	//converting  office_id from string to int:
 	officeId, err := strconv.Atoi(r.Form.Get("office_id"))
@@ -143,10 +118,15 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	}
 	//========================================================================
 
-	reservation.FirstName = r.Form.Get("first_name")
-	reservation.LastName = r.Form.Get("last_name")
-	reservation.Phone = r.Form.Get("phone")
-	reservation.Email = r.Form.Get("email")
+	reservation := models.Reservation{
+		FirstName: r.Form.Get("first_name"),
+		LastName:  r.Form.Get("last_name"),
+		Phone:     r.Form.Get("phone"),
+		Email:     r.Form.Get("email"),
+		StartDate: startDateFormatted,
+		EndDate:   endDateFormatted,
+		OfficeID:  officeId,
+	}
 
 	form := forms.New(r.PostForm)
 
@@ -157,6 +137,7 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := make(map[string]any)
 		data["reservation"] = reservation
+		http.Error(w, "Invalid form", http.StatusSeeOther)
 		render.Template(w, r, "make-reservation.page.html", &models.TemplateData{
 			Form: form,
 			Data: data,
@@ -167,13 +148,12 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	//writing to db the reservation
 	newReservationId, err := rep.DB.InsertReservation(reservation)
 	if err != nil {
-		helpers.ServerError(w, err)
+		rep.AppConfig.Session.Put(r.Context(), "error", "Can't insert reservation into db")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
-	//putting back reservation in the session
-	rep.AppConfig.Session.Put(r.Context(), "reservation", reservation)
 
-	resctriction := models.OfficeRestriction{
+	restriction := models.OfficeRestriction{
 		StartDate:     startDateFormatted,
 		EndDate:       endDateFormatted,
 		OfficeID:      officeId,
@@ -181,9 +161,10 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		RestrictionID: 1,
 	}
 
-	err = rep.DB.InsertOfficeRestriction(resctriction)
+	err = rep.DB.InsertOfficeRestriction(restriction)
 	if err != nil {
-		helpers.ServerError(w, err)
+		rep.AppConfig.Session.Put(r.Context(), "error", "Can't insert office restriction into db")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
