@@ -1,6 +1,7 @@
 package dbrepo
 
 import (
+	"errors"
 	"time"
 
 	"github.com/pierbusdev/conferenceRoomBookings/internal/models"
@@ -11,10 +12,16 @@ func (rep *testDBRepo) AllUsers() bool {
 }
 
 func (rep *testDBRepo) InsertReservation(res models.Reservation) (int, error) {
+	if res.OfficeID != 1 { //for tests
+		return 0, errors.New("some error for testing")
+	}
 	return 1, nil
 }
 
 func (rep *testDBRepo) InsertOfficeRestriction(restr models.OfficeRestriction) error {
+	if restr.OfficeID != 1 {
+		return errors.New("some error for testing")
+	}
 	return nil
 }
 
@@ -31,5 +38,8 @@ func (rep *testDBRepo) SearchAvailabilityForAllOffices(start, end time.Time) ([]
 
 func (rep *testDBRepo) GetOfficeById(id int) (models.Office, error) {
 	var office models.Office
+	if id > 2 {
+		return office, errors.New("some error for testing")
+	}
 	return office, nil
 }

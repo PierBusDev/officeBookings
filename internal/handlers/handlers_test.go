@@ -135,6 +135,131 @@ func TestRepository_PostReservation(t *testing.T) {
 	if responseRecorder.Code != http.StatusSeeOther {
 		t.Errorf("Reservation handler got response code %d, want %d", responseRecorder.Code, http.StatusSeeOther)
 	}
+
+	//test with missing body =============
+	req, _ = http.NewRequest("POST", "/make-reservation", nil)
+	ctx = getCtx(req)
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	responseRecorder = httptest.NewRecorder()
+	handler = http.HandlerFunc(Repo.PostReservation)
+	handler.ServeHTTP(responseRecorder, req)
+
+	if responseRecorder.Code != http.StatusTemporaryRedirect {
+		t.Errorf("Reservation handler got response code %d, want %d -> Missing response body", responseRecorder.Code, http.StatusTemporaryRedirect)
+	}
+
+	//test with invalid start date =============
+	requestBody = "start_date=99-01-2050" //invalid format
+	requestBody = requestBody + "&end_date=02-01-2050"
+	requestBody = requestBody + "&first_name=TestPier"
+	requestBody = requestBody + "&last_name=TestPaul"
+	requestBody = requestBody + "&email=test@pier.com"
+	requestBody = requestBody + "&phone=65656565"
+	requestBody = requestBody + "&office_id=1"
+	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(requestBody))
+	ctx = getCtx(req)
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	responseRecorder = httptest.NewRecorder()
+	handler = http.HandlerFunc(Repo.PostReservation)
+	handler.ServeHTTP(responseRecorder, req)
+
+	if responseRecorder.Code != http.StatusTemporaryRedirect {
+		t.Errorf("Reservation handler got response code %d, want %d -> Invalid start date", responseRecorder.Code, http.StatusTemporaryRedirect)
+	}
+
+	//test with invalid start date =============
+	requestBody = "start_date=01-01-2050"
+	requestBody = requestBody + "&end_date=82-01-2050" //invalid format
+	requestBody = requestBody + "&first_name=TestPier"
+	requestBody = requestBody + "&last_name=TestPaul"
+	requestBody = requestBody + "&email=test@pier.com"
+	requestBody = requestBody + "&phone=65656565"
+	requestBody = requestBody + "&office_id=1"
+	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(requestBody))
+	ctx = getCtx(req)
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	responseRecorder = httptest.NewRecorder()
+	handler = http.HandlerFunc(Repo.PostReservation)
+	handler.ServeHTTP(responseRecorder, req)
+
+	if responseRecorder.Code != http.StatusTemporaryRedirect {
+		t.Errorf("Reservation handler got response code %d, want %d -> Invalid end date", responseRecorder.Code, http.StatusTemporaryRedirect)
+	}
+
+	//test with invalid office id =============
+	requestBody = "start_date=01-01-2050"
+	requestBody = requestBody + "&end_date=02-01-2050"
+	requestBody = requestBody + "&first_name=TestPier"
+	requestBody = requestBody + "&last_name=TestPaul"
+	requestBody = requestBody + "&email=test@pier.com"
+	requestBody = requestBody + "&phone=65656565"
+	requestBody = requestBody + "&office_id=somenonsense" //invalid format
+	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(requestBody))
+	ctx = getCtx(req)
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	responseRecorder = httptest.NewRecorder()
+	handler = http.HandlerFunc(Repo.PostReservation)
+	handler.ServeHTTP(responseRecorder, req)
+
+	if responseRecorder.Code != http.StatusTemporaryRedirect {
+		t.Errorf("Reservation handler got response code %d, want %d -> Invalid office id", responseRecorder.Code, http.StatusTemporaryRedirect)
+	}
+
+	//test with invalid data
+	requestBody = "start_date=01-01-2050"
+	requestBody = requestBody + "&end_date=02-01-2050"
+	requestBody = requestBody + "&first_name=T" //first name too short
+	requestBody = requestBody + "&last_name=TestPaul"
+	requestBody = requestBody + "&email=test@pier.com"
+	requestBody = requestBody + "&phone=65656565"
+	requestBody = requestBody + "&office_id=1"
+	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(requestBody))
+	ctx = getCtx(req)
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	responseRecorder = httptest.NewRecorder()
+	handler = http.HandlerFunc(Repo.PostReservation)
+	handler.ServeHTTP(responseRecorder, req)
+
+	if responseRecorder.Code != http.StatusSeeOther {
+		t.Errorf("Reservation handler got response code %d, want %d -> Invalid data", responseRecorder.Code, http.StatusTemporaryRedirect)
+	}
+
+	//testing failing insert (see related function in test-repo.go)
+	requestBody = "start_date=01-01-2050"
+	requestBody = requestBody + "&end_date=02-01-2050"
+	requestBody = requestBody + "&first_name=TestPier"
+	requestBody = requestBody + "&last_name=TestPaul"
+	requestBody = requestBody + "&email=test@pier.com"
+	requestBody = requestBody + "&phone=65656565"
+	requestBody = requestBody + "&office_id=2" //this will make the db insert fail
+	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(requestBody))
+	ctx = getCtx(req)
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	responseRecorder = httptest.NewRecorder()
+	handler = http.HandlerFunc(Repo.PostReservation)
+	handler.ServeHTTP(responseRecorder, req)
+
+	if responseRecorder.Code != http.StatusTemporaryRedirect {
+		t.Errorf("Reservation handler got response code %d, want %d -> failed insertion", responseRecorder.Code, http.StatusTemporaryRedirect)
+	}
 }
 
 func getCtx(req *http.Request) context.Context {

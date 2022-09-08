@@ -113,7 +113,8 @@ func (rep *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	//converting  office_id from string to int:
 	officeId, err := strconv.Atoi(r.Form.Get("office_id"))
 	if err != nil {
-		helpers.ServerError(w, err)
+		rep.AppConfig.Session.Put(r.Context(), "error", "Invalid office id")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 	//========================================================================
@@ -252,6 +253,19 @@ type jsonResponse struct {
 }
 
 func (rep *Repository) AvailabilityJson(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		resp := jsonResponse{
+			Ok:      false,
+			Message: "Internal Error - Can't parse form",
+		}
+
+		out, _ := json.MarshalIndent(resp, "", "\t")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
 	startDate := r.Form.Get("start")
 	endDate := r.Form.Get("end")
 	officeID, _ := strconv.Atoi(r.Form.Get("office_id"))
@@ -269,7 +283,14 @@ func (rep *Repository) AvailabilityJson(w http.ResponseWriter, r *http.Request) 
 
 	available, err := rep.DB.SearchAvailabilityByDatesByOfficeId(startDateFormatted, endDateFormatted, officeID)
 	if err != nil {
-		helpers.ServerError(w, err)
+		resp := jsonResponse{
+			Ok:      false,
+			Message: "Internal Error - Can't search availability in db",
+		}
+
+		out, _ := json.MarshalIndent(resp, "", "\t")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
 		return
 	}
 	resp := jsonResponse{

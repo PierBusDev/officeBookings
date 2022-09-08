@@ -2,7 +2,7 @@
 
 This is just a learning project done to better learn Go while building a simple web application
 
-TODO: add more details once "done"
+The frontend is extremely simple because I had no interest in the scope of this POC on improving it.
 
 ## To run
 
